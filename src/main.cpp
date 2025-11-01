@@ -2,43 +2,78 @@
 #include "../include/playlist.hpp"
 #include "../include/spotcli.hpp"
 #include "../include/utils.hpp"
-#include <ios>
-#include <limits>
+#include <iostream>
+#include <ncurses.h>
+#include <string>
+#include <vector>
 
-static std::string g_authCode;
+void showPlaylistsFunction();
 
 int main() {
   std::cout << "spotcli main" << '\n';
-  uint32_t choice{askForChoice()};
+  for (;;) {
+    uint32_t choice{askForChoice()};
 
-  processChoice(choice);
+    processChoice(choice);
+  }
 }
+
 uint32_t askForChoice() {
-  uint32_t choice = {5};
+  initscr();
+  noecho();
+  cbreak();
+  keypad(stdscr, TRUE);
 
-  while (choice > 4) {
-    std::cout << "You have these options:" << '\n'
-              << "auth: 0" << '\n'
-              << "play playlist: 1" << '\n'
-              << "play liked songs: 2" << '\n'
-              << "play artist: 3" << '\n'
-              << "play song: 4" << '\n';
+  std::vector<std::string> options = {
+      "auth", "play playlist", "play liked songs", "play artist", "play song"};
 
-    if (!(std::cin >> choice)) {
-      std::cin.clear();
-      std::cin.ignore(1000, '\n');
-      std::cout << "invalid input, 1-4" << '\n';
+  int highlight = 0;
+  int choice = -1;
+  int ch;
+
+  while (true) {
+    clear();
+    mvprintw(
+        0, 0,
+        "(!You have to auth at least once) navigate and Enter to select:\n");
+    for (size_t i = 0; i < options.size(); i++) {
+      if ((int)i == highlight)
+        attron(A_REVERSE);
+      mvprintw(i + 1, 2, "%s", options[i].c_str());
+      if ((int)i == highlight)
+        attroff(A_REVERSE);
+    }
+    ch = getch();
+    switch (ch) {
+    case KEY_UP:
+      highlight--;
+      if (highlight < 0)
+        highlight = options.size() - 1;
+      break;
+    case KEY_DOWN:
+      highlight++;
+      if (highlight >= (int)options.size())
+        highlight = 0;
+      break;
+    case 10:
+      choice = highlight;
+      goto endLoop;
     }
   }
+
+endLoop:
+  endwin();
   return choice;
 }
-
 void processChoice(uint32_t choice) {
   switch (choice) {
   case 0:
-    g_authCode = authSpotify();
-    choice = askForChoice();
-    processChoice(choice);
+    if (authSpotify()) {
+      choice = askForChoice();
+      processChoice(choice);
+    } else {
+      std::cerr << "auth to spotify didnt work" << '\n';
+    }
     break;
   case 1:
     showPlaylistsFunction();
@@ -46,6 +81,5 @@ void processChoice(uint32_t choice) {
   }
 }
 void showPlaylistsFunction() {
-  showPlaylists(g_authCode.c_str(), getClientId(), getClientSecret(),
-                getRedirect_uri());
+  showPlaylists(getClientId(), getClientSecret(), getRedirect_uri());
 }

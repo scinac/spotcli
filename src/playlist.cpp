@@ -18,30 +18,20 @@
 #include <time.h>
 #include <vector>
 
-void showPlaylists(const char *authCode, const std::string &clientId,
-                   const std::string &clientSecret,
+void showPlaylists(const std::string &clientId, const std::string &clientSecret,
                    const std::string &redirectUri) {
   Tokens tokens;
 
-  if (loadTokens(tokens) && !isExpired(tokens)) {
+  if (loadTokens(tokens)) {
     std::cout << "using locally saved token" << '\n';
-
+    if (isExpired(tokens)) {
+      std::cout << "token isExpired, refreshing..." << '\n';
+      tokens.accessToken =
+          refreshAccessToken(tokens.refreshToken, clientId, clientSecret);
+    }
   } else {
-    if (!authCode || std::strlen(authCode) == 0) {
-      std::cerr << "ERROR: auth code is empty" << '\n';
-      return;
-    }
-    std::string access_token =
-        getAccessToken(authCode, clientId, clientSecret, redirectUri);
-    if (access_token.empty()) {
-      std::cerr << "ERROR: failed to get Access Token" << '\n';
-      return;
-    }
-
-    tokens.accessToken = access_token;
-    tokens.refreshToken = "TODO";
-    tokens.expiresAt = std::time(nullptr) + 3600;
-    saveTokens(tokens);
+    std::cerr << "not logged in" << '\n';
+    return;
   }
   std::string access_token = tokens.accessToken;
 
@@ -232,7 +222,6 @@ void playPlaylist(std::string &accessToken, std::string &playlistId) {
   } else {
     std::cout << "Playlist started successfully on device " << deviceName
               << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(30));
   }
 
   curl_slist_free_all(headers);
