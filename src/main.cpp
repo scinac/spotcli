@@ -10,20 +10,24 @@
 void showPlaylistsFunction();
 
 int main() {
+  initscr();
+  noecho();
+  cbreak();
+  keypad(stdscr, true);
+
   std::cout << "spotcli main" << '\n';
   for (;;) {
     uint32_t choice{askForChoice()};
 
     processChoice(choice);
   }
+
+  endwin();
+  killAllInstances();
+  return 0;
 }
 
 uint32_t askForChoice() {
-  initscr();
-  noecho();
-  cbreak();
-  keypad(stdscr, TRUE);
-
   std::vector<std::string> options = {
       "auth", "play playlist", "play liked songs", "play artist", "play song"};
 

@@ -1,7 +1,11 @@
 #include "../include/playlist.hpp"
 #include "../include/spotcli.hpp"
+#include <array>
+#include <cstdio>
+#include <cstdlib>
 #include <ios>
 #include <limits>
+#include <memory>
 
 std::string urlEncode(const std::string &value) {
   std::ostringstream escaped;
@@ -82,4 +86,17 @@ std::string base64Encode(const std::string &in) {
     out.push_back('=');
   }
   return out;
+}
+void killAllInstances() {
+  std::array<char, 128> buffer{};
+  std::string result;
+  std::unique_ptr<FILE, decltype(&pclose)> pipe(
+      popen("pgrep -x librespot", "r"), pclose);
+
+  if (pipe) {
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+      result += buffer.data();
+    }
+    std::system("pkill -x librespot >/dev/null 2>&1");
+  }
 }

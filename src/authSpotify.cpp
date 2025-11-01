@@ -6,6 +6,7 @@
 #include <json/config.h>
 #include <json/json.h>
 #include <json/reader.h>
+#include <ncurses.h>
 #include <string>
 
 bool getAccessToken(const std::string &authCode, const std::string &clientId,
@@ -59,6 +60,8 @@ bool getAccessToken(const std::string &authCode, const std::string &clientId,
     return false;
   }
 
+  std::cout << readBuffer << " " << authCode << '\n';
+
   if (!jsonData["access_token"].isString()) {
     std::cerr << "ERROR: access_token missing in response\n";
     return false;
@@ -78,6 +81,8 @@ bool getAccessToken(const std::string &authCode, const std::string &clientId,
   tokens.accessToken = access_token;
   tokens.refreshToken = refreshToken;
   tokens.expiresAt = std::time(nullptr) + 3600;
+
+  saveTokens(tokens);
 
   return true;
 }
@@ -100,7 +105,11 @@ bool authSpotify() {
       << "&scope=" << urlEncode(scope);
 
   const std::string urlStr = url.str();
-  std::cout << "Opening: " << urlStr << '\n';
+
+  mvprintw(0, 0, "Opening browser to authorize: %s", urlStr.c_str());
+  mvprintw(1, 0, "After authorizing, copy the code and press any key...");
+  clrtoeol();
+  refresh();
 
 #if defined(_WIN32) || defined(_WIN64)
   system(("start \"\" \"" + urlStr + "\"").c_str());
@@ -110,16 +119,34 @@ bool authSpotify() {
   system(("xdg-open \"" + urlStr + "\" 2>/dev/null").c_str());
 #endif
 
-  std::string authCode;
-  std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-  std::getline(std::cin, authCode);
+  getch();
+
+  int row, col;
+  getmaxyx(stdscr, row, col);
+
+  WINDOW *inputwin = newwin(3, col - 2, row - 4, 1);
+  box(inputwin, 0, 0);
+  mvwprintw(inputwin, 1, 1, "Enter Spotify code: ");
+  wrefresh(inputwin);
+
+  char buf[512];
+  wgetnstr(inputwin, buf, sizeof(buf) - 1);
+  std::string authCode(buf);
+
+  delwin(inputwin);
 
   if (!getAccessToken(authCode, client_id, getClientSecret(), redirect_uri)) {
-    std::cerr << "something failed while getting the access token" << '\n';
+    mvprintw(row - 2, 0, "Failed to get access token! Press any key...");
+    clrtoeol();
+    refresh();
+    getch();
     return false;
   }
 
-  std::cout << "authorized successfully" << '\n';
+  mvprintw(row - 2, 0, "Authorized successfully! Press any key to continue...");
+  clrtoeol();
+  refresh();
+  getch();
   return true;
 }
 
@@ -131,6 +158,8 @@ std::string refreshAccessToken(const std::string &refreshToken,
     std::cerr << "ERROR: curl init failed\n";
     return "";
   }
+
+  std::cout << refreshToken << '\n';
 
   std::string readBuffer;
   std::string postFields =
@@ -169,6 +198,8 @@ std::string refreshAccessToken(const std::string &refreshToken,
     return "";
   }
 
+  std::cout << readBuffer << '\n';
+
   if (!jsonData["access_token"].isString()) {
     std::cerr << "ERROR: access_token missing in refresh response\n";
     return "";
@@ -176,7 +207,6 @@ std::string refreshAccessToken(const std::string &refreshToken,
 
   std::string newAccessToken = jsonData["access_token"].asString();
 
-  // Spotify sometimes gives a new refresh_token — update if so
   if (jsonData.isMember("refresh_token")) {
     std::string newRefresh = jsonData["refresh_token"].asString();
     Tokens tokens;

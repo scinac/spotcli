@@ -10,3 +10,4 @@ const std::string getRedirect_uri();
 const std::string getClientSecret();
 size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp);
 std::string base64Encode(const std::string &in);
+void killAllInstances();

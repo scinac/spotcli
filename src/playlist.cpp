@@ -133,6 +133,7 @@ endLoop:
 }
 
 void playPlaylist(std::string &accessToken, std::string &playlistId) {
+  killAllInstances();
   std::string deviceName = "spotcli";
   std::string cmd = "nohup librespot --quiet --access-token " + accessToken +
                     " -n \"spotcli\" >/dev/null 2>&1 &";
