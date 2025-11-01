@@ -18,6 +18,7 @@ add_executable(${PROJECT_NAME}
     src/token_repo.cpp
     src/authSpotify.cpp
     src/utils.cpp
+    src/playback.cpp
 )
 
 include_directories(${JSONCPP_INCLUDE_DIRS})

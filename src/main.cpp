@@ -1,6 +1,8 @@
 #include "../include/authSpotify.hpp"
+#include "../include/playback.hpp"
 #include "../include/playlist.hpp"
 #include "../include/spotcli.hpp"
+#include "../include/token.hpp"
 #include "../include/utils.hpp"
 #include <iostream>
 #include <ncurses.h>
@@ -8,6 +10,8 @@
 #include <vector>
 
 void showPlaylistsFunction();
+
+static Tokens tokens;
 
 int main() {
   initscr();
@@ -17,6 +21,9 @@ int main() {
 
   std::cout << "spotcli main" << '\n';
   for (;;) {
+    int rows, cols;
+    getmaxyx(stdscr, rows, cols);
+
     uint32_t choice{askForChoice()};
 
     processChoice(choice);
@@ -47,6 +54,16 @@ uint32_t askForChoice() {
       if ((int)i == highlight)
         attroff(A_REVERSE);
     }
+
+    int rows, cols;
+    getmaxyx(stdscr, rows, cols);
+    move(rows - 1, 0);
+    clrtoeol();
+    attron(A_REVERSE);
+    mvprintw(rows - 1, 0, "(Space) Pause | (N) Next | (M) Previous");
+    attroff(A_REVERSE);
+
+    refresh();
     ch = getch();
     switch (ch) {
     case KEY_UP:
@@ -54,11 +71,18 @@ uint32_t askForChoice() {
       if (highlight < 0)
         highlight = options.size() - 1;
       break;
+
     case KEY_DOWN:
       highlight++;
       if (highlight >= (int)options.size())
         highlight = 0;
       break;
+
+    case ' ':
+      loadTokens(tokens);
+      togglePause(getDeviceId(tokens.accessToken), tokens.accessToken);
+      break;
+
     case 10:
       choice = highlight;
       goto endLoop;
