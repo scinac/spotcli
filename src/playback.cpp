@@ -1,12 +1,27 @@
 #include "../include/playback.hpp"
+#include "../include/authSpotify.hpp"
+#include "../include/token.hpp"
 #include "../include/utils.hpp"
 #include <curl/curl.h>
 #include <iostream>
 #include <json/json.h>
 #include <sstream>
 
-static void spotifyPutRequest(const std::string &url,
-                              const std::string &accessToken) {
+std::string getActiveAccess_token() {
+  Tokens tokens;
+  loadTokens(tokens);
+
+  if (isExpired(tokens)) {
+    tokens.accessToken = refreshAccessToken(tokens.refreshToken, getClientId(),
+                                            getClientSecret());
+  }
+
+  return tokens.accessToken;
+}
+
+static void spotifyPutRequest(const std::string &accessToken,
+                              const std::string &url) {
+
   CURL *curl = curl_easy_init();
   if (!curl)
     return;
@@ -28,8 +43,10 @@ static void spotifyPutRequest(const std::string &url,
   curl_slist_free_all(headers);
   curl_easy_cleanup(curl);
 }
+
 static bool isPlaying(const std::string &accessToken,
                       const std::string &deviceId) {
+
   CURL *curl = curl_easy_init();
   if (!curl)
     return false;
@@ -73,22 +90,26 @@ static bool isPlaying(const std::string &accessToken,
   return false;
 }
 
-void togglePause(const std::string &deviceId, const std::string &accessToken) {
+void togglePause() {
+  std::string accessToken = getActiveAccess_token();
+  const std::string deviceId = getDeviceId(accessToken);
+
   if (isPlaying(accessToken, deviceId)) {
     std::string url =
         "https://api.spotify.com/v1/me/player/pause?device_id=" + deviceId;
-    spotifyPutRequest(url, accessToken);
-    std::cout << "Paused playback\n";
+    spotifyPutRequest(accessToken, url);
+    // std::cout << "Paused playback\n";
   } else {
     std::string url =
         "https://api.spotify.com/v1/me/player/play?device_id=" + deviceId;
-    spotifyPutRequest(url, accessToken);
-    std::cout << "Resumed playback\n";
+    spotifyPutRequest(accessToken, url);
+    // std::cout << "Resumed playback\n";
   }
 }
 
 std::string getDeviceId(const std::string &accessToken,
                         const std::string &deviceName) {
+
   CURL *curl = curl_easy_init();
   if (!curl)
     return "";
@@ -106,6 +127,7 @@ std::string getDeviceId(const std::string &accessToken,
   CURLcode res = curl_easy_perform(curl);
   curl_slist_free_all(headers);
   curl_easy_cleanup(curl);
+  // std::cout << accessToken << readBuffer << '\n';
 
   if (res != CURLE_OK) {
     std::cerr << "Failed to get devices: " << curl_easy_strerror(res) << "\n";
@@ -116,10 +138,13 @@ std::string getDeviceId(const std::string &accessToken,
   Json::Value jsonData;
   std::istringstream s(readBuffer);
   std::string errs;
+
   if (!Json::parseFromStream(reader, s, &jsonData, &errs)) {
     std::cerr << "Failed to parse JSON: " << errs << "\n";
     return "";
   }
+
+  // std::cout << readBuffer << '\n';
 
   for (const auto &device : jsonData["devices"]) {
     if (device["name"].asString() == deviceName) {

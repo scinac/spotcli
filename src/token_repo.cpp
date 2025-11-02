@@ -12,6 +12,7 @@ struct Tokens {
 
 void saveTokens(const Tokens &tokens, const std::string &file = "tokens.json") {
   Json::Value root;
+  std::cout << "new: " << tokens.accessToken << '\n';
   root["access_token"] = tokens.accessToken;
   root["refresh_token"] = tokens.refreshToken;
   root["expires_at"] = static_cast<Json::Int64>(tokens.expiresAt);

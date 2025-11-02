@@ -21,20 +21,8 @@
 
 void showPlaylists(const std::string &clientId, const std::string &clientSecret,
                    const std::string &redirectUri) {
-  Tokens tokens;
 
-  if (loadTokens(tokens)) {
-    std::cout << "using locally saved token" << '\n';
-    if (isExpired(tokens)) {
-      std::cout << "token isExpired, refreshing..." << '\n';
-      tokens.accessToken =
-          refreshAccessToken(tokens.refreshToken, clientId, clientSecret);
-    }
-  } else {
-    std::cerr << "not logged in" << '\n';
-    return;
-  }
-  std::string access_token = tokens.accessToken;
+  std::string access_token = getActiveAccess_token();
 
   CURL *curl = curl_easy_init();
   if (!curl) {
@@ -79,7 +67,7 @@ void showPlaylists(const std::string &clientId, const std::string &clientSecret,
 
       int selectedIndex = selectPlaylist(playlistNames);
       if (selectedIndex >= 0 && selectedIndex < (int)playlistIds.size()) {
-        playPlaylist(tokens.accessToken, playlistIds[selectedIndex]);
+        playPlaylist(playlistIds[selectedIndex]);
       }
 
     } else {
@@ -91,6 +79,7 @@ void showPlaylists(const std::string &clientId, const std::string &clientSecret,
   curl_slist_free_all(headers);
   curl_easy_cleanup(curl);
 }
+
 int selectPlaylist(const std::vector<std::string> &playlists) {
   initscr();
   noecho();
@@ -133,7 +122,8 @@ endLoop:
   return choice;
 }
 
-void playPlaylist(std::string &accessToken, std::string &playlistId) {
+void playPlaylist(std::string &playlistId) {
+  std::string accessToken = getActiveAccess_token();
   killAllInstances();
 
   std::string deviceName = "spotcli";

@@ -60,7 +60,7 @@ bool getAccessToken(const std::string &authCode, const std::string &clientId,
     return false;
   }
 
-  std::cout << readBuffer << " " << authCode << '\n';
+  // std::cout << readBuffer << " " << authCode << '\n';
 
   if (!jsonData["access_token"].isString()) {
     std::cerr << "ERROR: access_token missing in response\n";
@@ -159,8 +159,6 @@ std::string refreshAccessToken(const std::string &refreshToken,
     return "";
   }
 
-  std::cout << refreshToken << '\n';
-
   std::string readBuffer;
   std::string postFields =
       "grant_type=refresh_token&refresh_token=" + refreshToken;
@@ -198,7 +196,7 @@ std::string refreshAccessToken(const std::string &refreshToken,
     return "";
   }
 
-  std::cout << readBuffer << '\n';
+  // std::cout << "new token response: " << readBuffer << '\n';
 
   if (!jsonData["access_token"].isString()) {
     std::cerr << "ERROR: access_token missing in refresh response\n";
@@ -213,6 +211,7 @@ std::string refreshAccessToken(const std::string &refreshToken,
     tokens.accessToken = newAccessToken;
     tokens.refreshToken = newRefresh;
     tokens.expiresAt = std::time(nullptr) + 3600;
+    std::cout << "new Token: " << tokens.accessToken << '\n';
     saveTokens(tokens);
   }
 

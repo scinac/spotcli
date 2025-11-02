@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 
-void togglePause(const std::string &deviceId, const std::string &accessToken);
+std::string getActiveAccess_token();
+void togglePause();
 std::string getDeviceId(const std::string &accessToken,
                         const std::string &deviceName = "spotcli");

@@ -79,8 +79,7 @@ uint32_t askForChoice() {
       break;
 
     case ' ':
-      loadTokens(tokens);
-      togglePause(getDeviceId(tokens.accessToken), tokens.accessToken);
+      togglePause();
       break;
 
     case 10:

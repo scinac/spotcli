@@ -7,8 +7,4 @@ void showPlaylists(const std::string &clientId, const std::string &clientSecret,
 
 int selectPlaylist(const std::vector<std::string> &playlists);
 
-void playPlaylist(std::string &accessToken, std::string &playlistId);
-
-std::string refreshAccessToken(const std::string &refreshToken,
-                               const std::string &clientId,
-                               const std::string &clientSecret);
+void playPlaylist(std::string &playlistId);
