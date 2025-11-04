@@ -4,6 +4,7 @@
 #include "../include/spotcli.hpp"
 #include "../include/token.hpp"
 #include "../include/utils.hpp"
+#include <array>
 #include <iostream>
 #include <ncurses.h>
 #include <string>
@@ -35,8 +36,7 @@ int main() {
 }
 
 uint32_t askForChoice() {
-  std::vector<std::string> options = {
-      "auth", "play playlist", "play liked songs", "play artist", "play song"};
+  std::array<std::string, 2> options = {"auth", "play playlist"};
 
   int highlight = 0;
   int choice = -1;
@@ -80,6 +80,22 @@ uint32_t askForChoice() {
 
     case ' ':
       togglePause();
+      break;
+
+    case 'n':
+      skipToNextSong();
+      break;
+
+    case 'N':
+      skipToNextSong();
+      break;
+
+    case 'm':
+      skipToPrevSong();
+      break;
+
+    case 'M':
+      skipToPrevSong();
       break;
 
     case 10:

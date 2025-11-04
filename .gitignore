@@ -3,3 +3,4 @@ build/*
 *.o
 *.log
 .env
+.cache
